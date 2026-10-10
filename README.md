@@ -2,7 +2,7 @@
 
 🇩🇪 [Deutsch](#deutsch) · 🇬🇧 [English](#english)
 
-**Live:** https://Suchti67.github.io/vintage-story-kochrezepte/
+**Live:** [https://Suchti67.github.io/vintage-story-kochrezepte/](https://suchti67.github.io/vintage_story_rezepte/)
 
 ---
 
