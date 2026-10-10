@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vintage Story</title>
+<style>
+:root{--bg:#1d1a16;--card:#2a251f;--tx:#ece3d3;--mut:#a89c88;--ac:#d9a441;--ln:#40382d;--ok:#7fc77f;--no:#c9786b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif;padding:16px;max-width:1300px;margin-inline:auto}
+h1{margin:0 0 4px;color:var(--ac)} .sub{color:var(--mut);margin-bottom:12px;font-size:14px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+button{background:var(--card);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:8px 14px;font-size:16px;cursor:pointer}
+button.on{background:var(--ac);color:#1d1a16;font-weight:700}
+.two{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:16px}
+@media(max-width:760px){.two{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 4px;font-size:19px;color:var(--ac)} .card h3{margin:0 0 6px;font-size:15px;color:var(--ac)}
+.meta{color:var(--mut);font-size:13px;margin-bottom:6px}
+.item{display:inline-flex;align-items:center;gap:6px;background:#352e26;border:1px solid var(--ln);border-radius:20px;padding:3px 4px 3px 12px;margin:3px 3px 3px 0;font-size:14px}
+.item.has{border-color:var(--ac);background:#4a3b22}
+.item button{padding:0 9px;font-size:16px;border-radius:50%;line-height:24px;height:26px}
+.item span.c{min-width:18px;text-align:center;font-weight:700;color:var(--ac)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--ln)}
+.row b{white-space:nowrap;color:var(--ac)} .opt{color:var(--mut)}
+.lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:8px 0 2px}
+.note{font-size:13px;color:var(--mut);margin-top:8px}
+.ok{color:var(--ok)} .no{color:var(--no)}
+.res{border-left:4px solid var(--ok)} .res.bad{border-left-color:var(--ln);opacity:.75}
+.big{font-size:22px;font-weight:700}
+.empty{color:var(--mut);padding:20px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+footer{margin-top:18px;color:var(--mut);font-size:12px}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+label{cursor:pointer}
+</style></head><body>
+<div class="top"><div><h1 id="h1"></h1><div class="sub" id="sub"></div></div><button id="lng"></button></div>
+<div class="tabs"><button id="t1" class="on"></button><button id="t3"></button><button id="t2"></button></div>
+
+<div id="p1" class="two">
+ <div>
+  <div class="ctl"><label id="wctl"><input type="checkbox" id="water" checked> <span id="wtxt"></span></label><button id="clr"></button></div>
+  <div id="inv"></div>
+ </div>
+ <div><div id="out"></div><div id="oven" style="display:none"></div></div>
+</div>
+
+<div id="p2" style="display:none">
+ <div class="card" id="rules"></div>
+ <div class="ctl"><span id="portl"></span><span id="btns"></span></div>
+ <div class="grid" id="g"></div>
+ <div class="card" style="margin-top:14px" id="pie"></div>
+</div>
+<footer id="foot"></footer>
+
+<script>
+const D={
+de:{title:"Vintage Story – Koch-Assistent",sub:"Zutaten eintragen → mögliche Rezepte, Slot-Belegung und Menge werden berechnet",
+ t1:"🧺 Zutaten-Rechner",t2:"📖 Rezeptübersicht",t3:"🔥 Ofen (Brot & Pie)",water:"Wasser vorhanden (Eimer)",clr:"Alles leeren",
+ hint:"Klick links auf „+“ bei deinen Zutaten – hier erscheinen dann die möglichen Rezepte.",
+ poss:"✅ Möglich",none:"Noch kein Rezept möglich.",imposs:"❌ Noch nicht möglich",
+ max:"Maximal",portion:"Portion",portions:"Portionen",sat:"Sättigung/Portion",slot:"Slot",optional:"optional",
+ water1:"Wasser",honeyJam:"Honig (2 Slots à 0,2 L ×N)",need:"Benötigt",miss:"Fehlt",wmiss:"Wasser (1 L pro Portion)",
+ youHave:"du hast",fruit2:"Obst (mind. 2 Stück)",honey2:"Honig (mind. 2× 0,2 L)",equal:"gleiche Stückzahl in jedem Pflicht-Slot (je Slot ein eigener Zutat-Typ)",
+ portl:"Portionen:",req:"Pflicht",liq:"Flüssigkeit",optl:"Optional",perSlot:"je Slot",
+ rules:"<b>Goldene Regeln</b><ul><li>Slot 1 + 2 = <b>Pflichtzutaten</b>. Slot 3 + 4 = optional.</li><li>Jede Zutat in einen <b>eigenen Slot</b>; zwei Körner in einem Slot ergeben kein Porridge.</li><li>Mehrere Portionen: in <b>allen belegten Slots gleich viele</b> Items (max. 6 Portionen).</li><li>Flüssigkeiten: Eimer 1 L · Krug 0,3 L · Schüssel 0,1 L pro Klick. Crock = 4 Portionen.</li></ul>",
+ pie:"<h2>🥧 Pie (Tonofen)</h2><div class='meta'>Teigboden + Füllung, dann in heißen Tonofen</div><div class='row'><span>Füllung gesamt</span><b>8 gleiche Zutaten</b></div><div class='row'><span>Aufbau</span><b>2 pro Füllebene</b></div><div class='note'>Füllungen: Fleisch · Gemüse · Obst · Käse (bis 8 Scheiben). Nicht mischen – Ausnahme <b>Pot Pie</b> (Fleisch + Gemüse). 4 Stücke pro Pie. Stufen: roh → halb gebacken → gar → verkohlt.</div>",
+ foot:"Quelle: Vintage Story Wiki (Cooking, Pie, Porridge, Meat stew). Mods/neue Versionen können abweichen. Sättigungswerte = Wert im gekochten Gericht pro Portion.",
+ ov:{
+ chain:"<h2>🌾 Vom Korn zum Teig</h2><ol><li>Korn am <b>Mahlstein (Quern)</b> zu <b>Mehl</b> mahlen (Annahme: 1 Korn → 1 Mehl – im Spiel kurz prüfen).</li><li>Im Crafting-Raster <b>1 Mehl + 1 L Wasser</b> (Eimer) → <b>1 Teig</b>. Alle Getreidesorten gehen.</li><li>Teig in den <b>heißen Tonofen</b> (über 160 °C) → Brot. Oder Teig auf einen <b>Tisch</b> legen → Pie-Boden.</li></ol>",
+ bread:"<h2>🍞 Brot</h2><div class='meta'>Backzeit ab frisch geheiztem Ofen: halb gar 40 s · perfekt 60 s · verkohlt 85 s</div><div class='meta'>Haltbarkeit: Teig 2 · halb gar 5 · perfekt 8 · verkohlt 17,5 Tage. In der Feuerstelle wird es nur verkohlt.</div>",
+ bh:"Brot aus deinen Körnern",bnone:"Trage Getreide links ein, dann siehst du, wie viel Brot daraus wird.",
+ bl:"{n} Brot · {n} Teig · {n} L Wasser · je {s} Sättigung (perfekt gebacken)",
+ bt:"Sättigung pro Brot (halb gar / perfekt / verkohlt)",
+ pie:"<h2>🥧 Pie</h2><div class='meta'>Boden: 2 Teig auf einem Tisch. Dann 4 Füllebenen à 2 gleiche Zutaten (= 8 Stück). Optional Deckel: 2 Teig. Erst mit allen 4 Ebenen backbar.</div><div class='meta'>Stufen: roh (2 Tage, nicht essbar) · halb gebacken (5 Tage, −10 % Sättigung) · gar (8 Tage) · verkohlt (12 Tage, −25 %). Ein Ofen backt 1 Pie, 4 Stücke pro Pie. Pilze und Wolfs-Buschfleisch sind nicht erlaubt.</div>",
+ ph:"Pies aus deinen Zutaten",pnone:"Mit deinen Zutaten ist noch kein Pie möglich (je Füllebene 2 Stück derselben Zutat, 4 Ebenen).",
+ pmeat:"Fleisch-Pie",pveg:"Gemüse-Pie",pfruit:"Obst-Pie",pcheese:"Käse-Pie",ppot:"Pot Pie (Fleisch + Gemüse)",
+ layer:"Ebene",bottom:"Boden",top:"Deckel (optional)",dough:"Teig",flour:"Mehl/Korn",water:"Wasser",
+ total:"Gesamt-Sättigung",slice:"pro Stück",maxpies:"Maximal {n} Pie(s) aus deinen Zutaten",
+ pmiss:"Nicht möglich"},
+ cat:{fruit:"🍎 Obst",honey:"🍯 Honig",veg:"🥕 Gemüse",grain:"🌾 Getreide",prot:"🍖 Protein",dairy:"🧀 Milchprodukte"}},
+en:{title:"Vintage Story – Cooking Assistant",sub:"Enter your ingredients → possible recipes, slot layout and amounts are calculated",
+ t1:"🧺 Ingredient calculator",t2:"📖 Recipe overview",t3:"🔥 Oven (bread & pie)",water:"Water available (bucket)",clr:"Clear all",
+ hint:"Click “+” next to your ingredients on the left – possible recipes will appear here.",
+ poss:"✅ Possible",none:"No recipe possible yet.",imposs:"❌ Not possible yet",
+ max:"Maximum",portion:"serving",portions:"servings",sat:"satiety/serving",slot:"Slot",optional:"optional",
+ water1:"Water",honeyJam:"Honey (2 slots of 0.2 L ×N)",need:"Requires",miss:"Missing",wmiss:"Water (1 L per serving)",
+ youHave:"you have",fruit2:"Fruit (at least 2)",honey2:"Honey (at least 2× 0.2 L)",equal:"same amount in every required slot (each slot its own ingredient type)",
+ portl:"Servings:",req:"Required",liq:"Liquid",optl:"Optional",perSlot:"per slot",
+ rules:"<b>Golden rules</b><ul><li>Slots 1 + 2 = <b>required ingredients</b>. Slots 3 + 4 = optional.</li><li>Put each ingredient in its <b>own slot</b>; two grains in one slot won't make porridge.</li><li>Multiple servings: <b>the same number of items in every used slot</b> (max. 6 servings).</li><li>Liquids: bucket 1 L · jug 0.3 L · bowl 0.1 L per click. Crock = 4 servings.</li></ul>",
+ pie:"<h2>🥧 Pie (clay oven)</h2><div class='meta'>Pie crust + filling, then into a hot clay oven</div><div class='row'><span>Total filling</span><b>8 identical ingredients</b></div><div class='row'><span>Structure</span><b>2 per filling layer</b></div><div class='note'>Fillings: meat · vegetable · fruit · cheese (up to 8 slices). Don't mix – except <b>pot pie</b> (meat + vegetable). 4 slices per pie. Stages: raw → part-baked → cooked → charred.</div>",
+ foot:"Source: Vintage Story Wiki (Cooking, Pie, Porridge, Meat stew). Mods/newer versions may differ. Satiety values = value in the cooked meal per serving.",
+ ov:{
+ chain:"<h2>🌾 From grain to dough</h2><ol><li>Grind grain at the <b>quern</b> into <b>flour</b> (assumed 1 grain → 1 flour – check in game).</li><li>In the crafting grid: <b>1 flour + 1 L water</b> (bucket) → <b>1 dough</b>. All grain types work.</li><li>Put dough into a <b>hot clay oven</b> (above 160 °C) → bread. Or place dough on a <b>table</b> → pie crust.</li></ol>",
+ bread:"<h2>🍞 Bread</h2><div class='meta'>Bake time from a freshly heated oven: part-baked 40 s · perfect 60 s · charred 85 s</div><div class='meta'>Shelf life: dough 2 · part-baked 5 · perfect 8 · charred 17.5 days. The firepit only makes charred bread.</div>",
+ bh:"Bread from your grain",bnone:"Enter grain on the left to see how much bread you can make.",
+ bl:"{n} bread · {n} dough · {n} L water · {s} satiety each (perfectly baked)",
+ bt:"Satiety per bread (part-baked / perfect / charred)",
+ pie:"<h2>🥧 Pie</h2><div class='meta'>Crust: 2 dough on a table. Then 4 filling layers of 2 identical ingredients (= 8 items). Optional top crust: 2 dough. Only bakeable with all 4 layers.</div><div class='meta'>Stages: raw (2 days, inedible) · part-baked (5 days, −10% satiety) · cooked (8 days) · charred (12 days, −25%). One oven bakes 1 pie, 4 slices per pie. Mushrooms and wolf bushmeat are not allowed.</div>",
+ ph:"Pies from your ingredients",pnone:"No pie possible with your ingredients yet (2 of the same item per layer, 4 layers).",
+ pmeat:"Meat pie",pveg:"Vegetable pie",pfruit:"Fruit pie",pcheese:"Cheese pie",ppot:"Pot pie (meat + vegetable)",
+ layer:"Layer",bottom:"Bottom crust",top:"Top crust (optional)",dough:"dough",flour:"flour/grain",water:"water",
+ total:"Total satiety",slice:"per slice",maxpies:"At most {n} pie(s) from your ingredients",
+ pmiss:"Not possible"},
+ cat:{fruit:"🍎 Fruit",honey:"🍯 Honey",veg:"🥕 Vegetables",grain:"🌾 Grain",prot:"🍖 Protein",dairy:"🧀 Dairy"}}
+};
+// id, de, en, Kategorie, Sättigung, Tag
+const I=[
+["cherry","Kirsche","Cherry","fruit",60],["lychee","Litschi","Lychee","fruit",60],["cran","Preiselbeere","Cranberry","fruit",90],["saguaro","Saguaro-Frucht","Saguaro fruit","fruit",90],
+["apple","Apfel","Apple","fruit",120],["mango","Mango","Mango","fruit",120],["orange","Orange","Orange","fruit",120],["peach","Pfirsich","Peach","fruit",120],["pear","Birne","Pear","fruit",120],["pomegr","Granatapfel","Pomegranate","fruit",120],["pine","Ananas (Scheibe)","Pineapple (slice)","fruit",120],
+["berry","Beeren (Blau-/Johannis-/Erd-/Brom-/Himbeere…)","Berries (blue-/currant/straw-/black-/raspberry…)","fruit",120],["breadfruit","Brotfrucht","Breadfruit","fruit",250],
+["honey","Honig (je 0,2 L)","Honey (per 0.2 L)","honey",80],
+["cabbage","Kohl","Cabbage","veg",450],["cassavaV","Maniok (verarbeitet)","Cassava (processed)","veg",120],["carrot","Karotte","Carrot","veg",150],["parsnip","Pastinake","Parsnip","veg",150],["onion","Zwiebel","Onion","veg",150],["turnip","Rübe","Turnip","veg",150],["olive","Olive","Olive","veg",150],["mush","Pilz (nicht giftig!)","Mushroom (not poisonous!)","veg",120],["pumpkin","Kürbis (Scheibe)","Pumpkin (slice)","veg",180],
+["flax","Flachs","Flax","grain",120],["rye","Roggen","Rye","grain",240],["spelt","Dinkel","Spelt","grain",240],["amar","Amaranth","Amaranth","grain",240],["sunf","Sonnenblume","Sunflower","grain",240],["cassG","Maniok (Korn)","Cassava (grain)","grain",240],["rice","Reis","Rice","grain",280],
+["egg","Ei","Egg","prot",200,"egg"],["fish","Fisch","Fish","prot",375,"meat"],["poultry","Geflügel","Poultry","prot",375,"meat"],["red","Rotfleisch","Red meat","prot",420,"meat"],["peanut","Erdnuss","Peanut","prot",160,"legume"],["soy","Sojabohne","Soybean","prot",240,"legume"],
+["cheddar","Cheddar (Scheibe)","Cheddar (slice)","dairy",360],["blue","Blauschimmelkäse (Scheibe)","Blue cheese (slice)","dairy",300]
+].map(a=>({id:a[0],de:a[1],en:a[2],cat:a[3],sat:a[4],tag:a[5]||""}));
+
+let lang=(navigator.language||(navigator.languages&&navigator.languages[0])||"en").toLowerCase().startsWith("de")?"de":"en";
+const t=k=>D[lang][k], nm=x=>x[lang];
+const has=new Map();
+const isG=x=>x.cat==="grain",isF=x=>x.cat==="fruit",isV=x=>x.cat==="veg",isH=x=>x.cat==="honey",
+ isM=x=>x.tag==="meat",isL=x=>x.tag==="legume",isE=x=>x.tag==="egg",isP=x=>x.cat==="prot",isC=x=>x.cat==="dairy";
+const RC=[
+{n:{de:"🥣 Porridge",en:"🥣 Porridge"},req:[isG,isG],reqT:{de:"2× Getreide",en:"2× grain"},opt:[x=>isF(x)||isH(x)||isV(x)||isG(x)],max:2,caps:[[isF,1]]},
+{n:{de:"🍖 Fleischeintopf",en:"🍖 Meat stew"},req:[isM,isM],reqT:{de:"2× Fleisch/Fisch (Rotfleisch, Geflügel, Fisch)",en:"2× meat/fish (red meat, poultry, fish)"},opt:[x=>isF(x)||isH(x)||isV(x)||isP(x)],max:2,caps:[[isF,1]]},
+{n:{de:"🥕 Gemüseeintopf",en:"🥕 Vegetable stew"},req:[x=>isV(x)||isL(x),x=>isV(x)||isL(x)],reqT:{de:"2× Gemüse oder Hülsenfrucht",en:"2× vegetable or legume"},opt:[x=>isV(x)||isL(x)],max:2,caps:[]},
+{n:{de:"🍜 Suppe",en:"🍜 Soup"},req:[isV],reqT:{de:"1× Gemüse + Wasser",en:"1× vegetable + water"},opt:[x=>isV(x)||isM(x)||isE(x)],max:3,caps:[[x=>isM(x)||isE(x),1]],water:true},
+{n:{de:"🍳 Rührei",en:"🍳 Scrambled eggs"},req:[isE,isE],reqT:{de:"2× Ei",en:"2× egg"},opt:[x=>isV(x)||isE(x)||isC(x)],max:2,caps:[]},
+{n:{de:"🍯 Marmelade",en:"🍯 Jam"},req:[isF,isF],reqT:{de:"2× Obst + 2× 0,2 L Honig",en:"2× fruit + 2× 0.2 L honey"},opt:[],max:0,caps:[],jam:true}
+];
+function tryAlloc(r,N,water){
+ const rem={};I.forEach(x=>rem[x.id]=has.get(x.id)||0);
+ const slots=[];
+ if(r.water&&!water)return null;
+ for(const p of r.req){
+  const c=I.filter(x=>p(x)&&rem[x.id]>=N).sort((a,b)=>a.sat-b.sat);
+  if(!c.length)return null;
+  const pick=c[c.length-1];rem[pick.id]-=N;slots.push({it:pick,n:N,req:1});
+ }
+ if(r.jam){if(rem.honey<2*N)return null;return {slots,honey:2*N};}
+ const used=[];
+ for(let k=0;k<r.max;k++){
+  const p=r.opt[0];
+  const c=I.filter(x=>p(x)&&rem[x.id]>=N&&r.caps.every(([f,m])=>!f(x)||slots.concat(used).filter(s=>f(s.it)).length<m)).sort((a,b)=>b.sat-a.sat);
+  if(!c.length)break;
+  rem[c[0].id]-=N;used.push({it:c[0],n:N});
+ }
+ return {slots:slots.concat(used)};
+}
+function solve(r,water){for(let N=6;N>=1;N--){const a=tryAlloc(r,N,water);if(a)return {N,a};}return null;}
+function why(r,water){
+ const m=[];
+ if(r.water&&!water)m.push(t("wmiss"));
+ const cnt=p=>I.filter(p).reduce((s,x)=>s+(has.get(x.id)||0),0);
+ if(r.jam){if(cnt(isF)<2)m.push(t("fruit2"));if((has.get("honey")||0)<2)m.push(t("honey2"));return m;}
+ const have=cnt(r.req[0]);
+ if(have<r.req.length)m.push(`${r.reqT[lang]} (${t("youHave")} ${have})`);
+ else if(!m.length)m.push(t("equal"));
+ return m;
+}
+const sat=s=>s.a.slots.reduce((q,x)=>q+x.it.sat,0);
+const $=id=>document.getElementById(id);
+const fmt=x=>(Math.round(x*10)/10).toString().replace(".",lang==="de"?",":".");
+
+function renderInv(){
+ let h="";
+ for(const c in D[lang].cat){
+  h+=`<div class="card"><h3>${t("cat")[c]}</h3>`;
+  I.filter(x=>x.cat===c).forEach(x=>{
+   const n=has.get(x.id)||0;
+   h+=`<span class="item ${n?"has":""}">${nm(x)}<button data-a="-" data-i="${x.id}">−</button><span class="c">${n}</span><button data-a="+" data-i="${x.id}">+</button></span>`;
+  });
+  h+="</div>";
+ }
+ $("inv").innerHTML=h;
+}
+function renderOut(){
+ const water=$("water").checked;
+ const total=[...has.values()].reduce((a,b)=>a+b,0);
+ if(!total){$("out").innerHTML=`<div class="card empty">${t("hint")}</div>`;return;}
+ const ok=[],bad=[];
+ RC.forEach(r=>{const s=solve(r,water);(s?ok:bad).push({r,s});});
+ ok.sort((a,b)=>sat(b.s)-sat(a.s));
+ let h=`<div class="lbl">${t("poss")} (${ok.length})</div>`;
+ if(!ok.length)h+=`<div class="card empty">${t("none")}</div>`;
+ ok.forEach(({r,s})=>{
+  const rows=s.a.slots.map((x,i)=>`<div class="row ${x.req?"":"opt"}"><span>${t("slot")} ${i+1}${x.req?"":" ("+t("optional")+")"}: ${nm(x.it)}</span><b>${x.n}×</b></div>`).join("");
+  const liq=(r.water?`<div class="row"><span>${t("water1")}</span><b>${s.N} L</b></div>`:"")+(s.a.honey?`<div class="row"><span>${t("honeyJam")}</span><b>${fmt(s.a.honey*0.2)} L</b></div>`:"");
+  h+=`<div class="card res"><h2>${r.n[lang]}</h2><div class="meta">${t("max")} <span class="ok big">${s.N}</span> ${s.N>1?t("portions"):t("portion")} · ≈ ${sat(s)} ${t("sat")}</div>${rows}${liq}</div>`;
+ });
+ h+=`<div class="lbl" style="margin-top:14px">${t("imposs")}</div>`;
+ bad.forEach(({r})=>{
+  h+=`<div class="card res bad"><h2>${r.n[lang]}</h2><div class="meta">${t("need")}: ${r.reqT[lang]}</div><div class="no" style="font-size:13px">${t("miss")}: ${why(r,water).join(", ")}</div></div>`;
+ });
+ $("out").innerHTML=h;
+}
+$("inv").addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ const id=b.dataset.i,n=(has.get(id)||0)+(b.dataset.a==="+"?1:-1);
+ if(n<=0)has.delete(id);else has.set(id,n);
+ const y=scrollY;renderInv();renderOut();if(tab===3)renderOven();scrollTo(0,y);
+});
+$("clr").onclick=()=>{has.clear();renderInv();renderOut();if(tab===3)renderOven()};
+$("water").onchange=renderOut;
+const t1=$("t1"),t2=$("t2"),t3=$("t3"),p1=$("p1"),p2=$("p2");
+let tab=1;
+function showTab(n){
+ tab=n;
+ p1.style.display=n===2?"none":"";p2.style.display=n===2?"":"none";
+ $("out").style.display=n===1?"":"none";$("oven").style.display=n===3?"":"none";
+ $("wctl").style.display=n===1?"":"none";
+ t1.className=n===1?"on":"";t2.className=n===2?"on":"";t3.className=n===3?"on":"";
+ if(n===3)renderOven();
+}
+t1.onclick=()=>showTab(1);t2.onclick=()=>showTab(2);t3.onclick=()=>showTab(3);
+
+// Ofen
+const BREAD={flax:[70,160,100],rice:[160,330,220]};
+const bs=id=>BREAD[id]||[150,300,210];
+function pieTypes(){
+ const cnt=x=>has.get(x.id)||0;
+ const layersOf=f=>I.filter(f).flatMap(x=>Array(Math.floor(cnt(x)/2)).fill(x)).sort((a,b)=>b.sat-a.sat);
+ const meat=layersOf(isM),veg=layersOf(x=>isV(x)&&x.id!=="mush"),fruit=layersOf(isF),cheese=layersOf(isC);
+ const out=[];
+ [["pmeat",meat],["pveg",veg],["pfruit",fruit],["pcheese",cheese]].forEach(([k,l])=>out.push({k,layers:l.slice(0,4),n:Math.floor(l.length/4),ok:l.length>=4,have:l.length}));
+ let pot={k:"ppot",ok:false,n:0,layers:[],have:meat.length+veg.length};
+ if(meat.length&&veg.length&&meat.length+veg.length>=4){
+  const rest=meat.slice(1).concat(veg.slice(1)).sort((a,b)=>b.sat-a.sat);
+  pot.layers=[meat[0],veg[0]].concat(rest.slice(0,2));pot.ok=true;pot.n=Math.floor((meat.length+veg.length)/4);
+ }
+ out.push(pot);return out;
+}
+function renderOven(){
+ let h=`<div class="card">${t("ov").chain}</div><div class="card">${t("ov").bread}`;
+ h+=`<div class="lbl">${t("ov").bt}</div>`;
+ [["flax"],["rye"],["rice"]].forEach(([id])=>{const x=I.find(i=>i.id===id);const b=bs(id);h+=`<div class="row"><span>${nm(x)}</span><b>${b[0]} / ${b[1]} / ${b[2]}</b></div>`;});
+ h+=`<div class="row"><span>${lang==="de"?"Dinkel, Amaranth, Sonnenblume, Maniok":"Spelt, amaranth, sunflower, cassava"}</span><b>150 / 300 / 210</b></div></div>`;
+ const grains=I.filter(x=>isG(x)&&has.get(x.id));
+ h+=`<div class="card"><h3>${t("ov").bh}</h3>`;
+ if(!grains.length)h+=`<div class="meta">${t("ov").bnone}</div>`;
+ grains.forEach(x=>{const n=has.get(x.id);h+=`<div class="row"><span>${nm(x)} ×${n}</span><b></b></div><div class="meta">${t("ov").bl.replace(/\{n\}/g,n).replace("{s}",bs(x.id)[1])}</div>`;});
+ h+=`</div><div class="card">${t("ov").pie}</div><div class="lbl">${t("ov").ph}</div>`;
+ const P=pieTypes(),ok=P.filter(p=>p.ok);
+ if(!has.size||!ok.length)h+=`<div class="card empty">${t("ov").pnone}</div>`;
+ const cat={pmeat:"protein",pveg:"vegetable",pfruit:"fruit",pcheese:"dairy",ppot:"protein + vegetable"};
+ ok.forEach(p=>{
+  const tot=p.layers.reduce((q,x)=>q+2*x.sat,0);
+  const rows=p.layers.map((x,i)=>`<div class="row"><span>${t("ov").layer} ${i+1}: ${nm(x)}</span><b>2×</b></div>`).join("");
+  h+=`<div class="card res"><h2>${t("ov")[p.k]}</h2><div class="meta">${t("ov").maxpies.replace("{n}",p.n)}</div>${rows}
+  <div class="row"><span>${t("ov").bottom}</span><b>2 ${t("ov").dough}</b></div><div class="row opt"><span>${t("ov").top}</span><b>+2 ${t("ov").dough}</b></div>
+  <div class="row"><span>${t("ov").flour} / ${t("ov").water}</span><b>2–4 / 2–4 L</b></div>
+  <div class="meta" style="margin-top:6px">${t("ov").total}: ≈ ${tot} (${cat[p.k]}) · ${t("ov").slice}: ≈ ${Math.round(tot/4)}</div></div>`;
+ });
+ $("oven").innerHTML=h;
+}
+// Übersicht
+const R=[
+{n:{de:"🥣 Porridge",en:"🥣 Porridge"},t:{de:"Haltbar frisch: 3 Tage · 6 Portionen ≈ 90 s",en:"Fresh shelf life: 3 days · 6 servings ≈ 90 s"},req:[[{de:"Getreide",en:"Grain"},1],[{de:"Getreide",en:"Grain"},1]],opt:[{de:"bis 2× Obst",en:"up to 2× fruit"},{de:"bis 2× Gemüse",en:"up to 2× vegetable"},{de:"bis 2× Getreide",en:"up to 2× grain"}],liq:[[{de:"Honig (optional)",en:"Honey (optional)"},0.2]],note:{de:"Reis 280, Flachs 120, andere Körner 240 Sättigung.",en:"Rice 280, flax 120, other grains 240 satiety."}},
+{n:{de:"🍖 Fleischeintopf",en:"🍖 Meat stew"},t:{de:"Haltbar frisch: 6 Tage · 6 Portionen ≈ 4 min",en:"Fresh shelf life: 6 days · 6 servings ≈ 4 min"},req:[[{de:"Rotfleisch / Geflügel / roher Fisch",en:"Red meat / poultry / raw fish"},1],[{de:"Rotfleisch / Geflügel / roher Fisch",en:"Red meat / poultry / raw fish"},1]],opt:[{de:"bis 1× Obst",en:"up to 1× fruit"},{de:"bis 2× Gemüse",en:"up to 2× vegetable"},{de:"bis 2× Protein",en:"up to 2× protein"}],liq:[[{de:"Honig (optional)",en:"Honey (optional)"},0.2]],note:{de:"Wolfs-Buschfleisch ist nicht verwendbar.",en:"Wolf bushmeat cannot be used."}},
+{n:{de:"🥕 Gemüseeintopf",en:"🥕 Vegetable stew"},t:{de:"2× Gemüse oder Hülsenfrucht",en:"2× vegetable or legume"},req:[[{de:"Gemüse / Hülsenfrucht",en:"Vegetable / legume"},1],[{de:"Gemüse / Hülsenfrucht",en:"Vegetable / legume"},1]],opt:[{de:"bis 2× Gemüse",en:"up to 2× vegetable"},{de:"bis 2× Hülsenfrucht (Soja, Erdnuss)",en:"up to 2× legume (soy, peanut)"}],liq:[],note:{de:"Giftige Pilze schaden auch gekocht!",en:"Poisonous mushrooms still hurt when cooked!"}},
+{n:{de:"🍜 Suppe",en:"🍜 Soup"},t:{de:"1× frisches Gemüse + Wasser",en:"1× fresh vegetable + water"},req:[[{de:"Frisches Gemüse",en:"Fresh vegetable"},1]],opt:[{de:"bis 2× Gemüse",en:"up to 2× vegetable"},{de:"bis 1× Fleisch/Fisch ODER Ei",en:"up to 1× meat/fish OR egg"}],liq:[[{de:"Wasser (Pflicht)",en:"Water (required)"},1]],note:null},
+{n:{de:"🍳 Rührei",en:"🍳 Scrambled eggs"},t:{de:"2× Ei",en:"2× egg"},req:[[{de:"Ei",en:"Egg"},1],[{de:"Ei",en:"Egg"},1]],opt:[{de:"bis 2× Gemüse",en:"up to 2× vegetable"},{de:"bis 2× Ei",en:"up to 2× egg"},{de:"bis 2× Käse (Scheiben)",en:"up to 2× cheese (slices)"}],liq:[],note:null},
+{n:{de:"🍯 Marmelade",en:"🍯 Jam"},t:{de:"2× Obst + Honig",en:"2× fruit + honey"},req:[[{de:"Obst",en:"Fruit"},1],[{de:"Obst",en:"Fruit"},1]],opt:[],liq:[[{de:"Honig (2 × 0,2 L)",en:"Honey (2 × 0.2 L)"},0.4]],note:{de:"0,1-L-Schritte per Schüssel.",en:"0.1 L steps via bowl."}}
+];
+let N=1;
+function renderRef(){
+ $("g").innerHTML=R.map(r=>{
+  const rq=r.req.map(([a,b])=>`<div class="row"><span>${a[lang]}</span><b>${b*N}×</b></div>`).join("");
+  const lq=r.liq.map(([a,b])=>`<div class="row"><span>${a[lang]}</span><b>${fmt(b*N)} L</b></div>`).join("");
+  const op=r.opt.map(o=>`<div class="row opt"><span>${o[lang]}</span><b>${t("perSlot")} ${N}×</b></div>`).join("");
+  return `<div class="card"><h2>${r.n[lang]}</h2><div class="meta">${r.t[lang]}</div><div class="lbl">${t("req")}</div>${rq}${lq?`<div class="lbl">${t("liq")}</div>${lq}`:""}${op?`<div class="lbl">${t("optl")}</div>${op}`:""}${r.note?`<div class="note">${r.note[lang]}</div>`:""}</div>`}).join("");
+ [...$("btns").children].forEach((b,i)=>b.classList.toggle("on",i+1===N));
+}
+for(let i=1;i<=6;i++){const b=document.createElement("button");b.textContent=i;b.onclick=()=>{N=i;renderRef()};$("btns").appendChild(b)}
+
+function applyLang(){
+ document.documentElement.lang=lang;document.title=t("title");
+ $("h1").textContent="🍲 "+t("title");$("sub").textContent=t("sub");
+ t1.textContent=t("t1");t2.textContent=t("t2");t3.textContent=t("t3");$("wtxt").textContent=t("water");$("clr").textContent=t("clr");
+ $("rules").innerHTML=t("rules");$("portl").textContent=t("portl");$("pie").innerHTML=t("pie");$("foot").textContent=t("foot");
+ $("lng").textContent=lang==="de"?"🌐 English":"🌐 Deutsch";
+ renderInv();renderOut();renderRef();if(tab===3)renderOven();
+}
+$("lng").onclick=()=>{lang=lang==="de"?"en":"de";applyLang()};
+applyLang();
+</script></body></html>
