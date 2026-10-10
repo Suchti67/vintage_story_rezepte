@@ -63,3 +63,7 @@ Download `index.html` and open it in your browser, or use the live version via t
 Recipe data and numbers come from the [Vintage Story Wiki](https://wiki.vintagestory.at) (Cooking, Pie, Bread, Dough, Porridge, Meat stew), licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). This project is therefore also released under **CC BY-NC-SA 4.0**: give attribution, no commercial use, share alike.
 
 Unofficial fan project, not affiliated with Anego Systems, the developers of Vintage Story.
+
+  ## Entstehung / Credits
+   Diese Seite wurde mit Hilfe von Claude (Anthropic) erstellt und von mir geprüft und angepasst.
+   This page was created with the help of Claude (Anthropic) and reviewed and adjusted by me.
